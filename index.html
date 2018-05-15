@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Github API call</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<style>
+ul {
+	list-style:none;
+	width:100%;
+}
+ul > li {
+	padding:5px;
+	display:inline-block;
+	text-align:center;
+}
+
+</style>
+</head>
+
+<body>
+
+<form name="frm" id="frm" method="post">
+<input type="text" name="search" placeholder="Search" required="required" />
+<button name="btn1" id="btn1" type="submit">Search</button>
+<input type="hidden" name="pageno" value="1" />
+</form>
+
+<div id="count"></div>
+<div id="container">
+
+</div>
+
+<br />
+<p id="result"></p>
+<button type="button" id="loadnore" style="display:none;">Load more..</button>
+
+</body>
+
+<script>
+$(document).ready(function(e) {
+	$('#loadnore').click(function() {
+		$(this).text('Loading more....')
+		$(this).attr('disabled', 'disabled');	
+		$('#frm').submit();
+	})
+	
+    $('#frm').submit(function(e) {
+		e.preventDefault();
+		$('#btn1').text('Searching....')
+		$('#btn1').attr('disabled', 'disabled');	
+		
+		var holder = $('#container');
+		var name = $(this).find('input[name="search"]').val();
+		var pageno = $(this).find('input[name="pageno"]').val();
+		var per_page = 50; 
+		
+		$.ajax({
+			url: 'apicall.php',
+			type: 'post',
+			data: {'name': name, 'page': pageno, 'perpage': per_page},
+			success: function (response) {
+				var p = parseInt(response.page) + 1;
+				$('#frm').find('input[name="pageno"]').val(p);
+				
+				var dataItem = $.parseJSON(response.data);
+				
+				$('#count').html('<h1>Total user found: '+dataItem.total_count+'</h1>')
+				var list = $('<ul />');
+				
+				$(dataItem.items).each(function(index, element) {
+					$(list).append('<li><img src="'+this.avatar_url+'" width="60" /><br />'+this.login+'</li>')					
+				});
+				
+				$(holder).append(list)
+				
+				
+				$('#btn1').removeAttr('disabled');
+				$('#btn1').text('Search');
+				
+				$('#result').text((per_page * parseInt(response.page)) +' Users loaded.')
+				
+				if (parseInt(dataItem.total_count) > (per_page * parseInt(response.page))) {
+					$('#loadnore').removeAttr('disabled').text('Load more..');
+					$('#loadnore').show();
+				} else {
+					$('#loadnore').hide();
+				}
+			}
+		});
+	});
+});
+</script>
+
+</html>
